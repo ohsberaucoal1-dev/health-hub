@@ -90,6 +90,6 @@ Server lokal memerlukan **runtime Node.js 24.x dan disk persisten**. GitHub Page
 
 SQLite menyimpan data di `data/health-hub.sqlite` secara default, termasuk file WAL ketika aktif. File ini **tidak dienkripsi oleh aplikasi**. Batasi izin filesystem, gunakan enkripsi disk sesuai lingkungan, dan buat backup konsisten melalui SQLite backup API atau saat server berhenti. Jangan menyalin file database aktif saja tanpa WAL. API tidak menyediakan penghapusan data server; penghapusan/pengarsipan dilakukan oleh pengelola dengan backup dan prosedur terpisah. Tombol Hapus data lokal hanya menghapus browser.
 
-Backend ini belum di-deploy ke internet. Menjalankan server lokal dan menambahkan pengiriman HTTP pada aplikasi masih diperlukan untuk koneksi nyata.
+Backend produksi tersedia di **https://health-hub-sigma-three.vercel.app**. Endpoint penerimaan: `POST https://health-hub-sigma-three.vercel.app/api/v1/records`. Kirim Bearer API key profil yang sudah dikonfigurasi; aplikasi Android Health Hub masih perlu mengimplementasikan pengiriman HTTP sesuai kontrak ini. Men-deploy website tidak otomatis mengubah aplikasi Android.
 
 Implementasi lokal memakai [SQLite bawaan Node.js](https://nodejs.org/api/sqlite.html); implementasi PostgreSQL menggunakan dependency `pg`. Jalankan `npm.cmd ci` setelah clone.

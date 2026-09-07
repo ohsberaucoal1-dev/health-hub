@@ -1,5 +1,7 @@
 # Health Hub — Dashboard analisis berbasis riset
 
+Produksi: **https://health-hub-sigma-three.vercel.app**. Frontend dan API berjalan di Vercel, dengan database PostgreSQL Neon persisten. Push ke `main` memicu pengujian dan deployment otomatis.
+
 Website dan backend berbahasa Indonesia berdasarkan dua dokumen Markdown dalam folder ini. Node.js 24.x, SQLite untuk lokal, dan PostgreSQL untuk Vercel. Jalankan `npm.cmd ci` setelah clone untuk memasang dependency.
 
 ## Menjalankan

@@ -1,5 +1,7 @@
 # Deploy Health Hub ke Vercel
 
+Deployment produksi: **https://health-hub-sigma-three.vercel.app**. Proyek Vercel `health-hub` terhubung dengan GitHub `ohsberaucoal1-dev/health-hub`; branch produksi `main`. Neon `health-hub-db` menggunakan paket Free, region Singapura, dan layanan login tambahan Neon dinonaktifkan (`auth=false`). Akses API Health Hub tetap dilindungi Bearer key. Database terhubung ke environment **production**; preview belum memiliki database terpisah dan API preview akan mengembalikan 503 sampai dikonfigurasi.
+
 ## MCP dan deployment otomatis
 
 MCP resmi Vercel dikonfigurasi dengan `codex mcp add vercel --url https://mcp.vercel.com`, kemudian OAuth akun Vercel. Status konfigurasi dapat diperiksa dengan `codex mcp get vercel`; koneksi OAuth dapat diulang dengan `codex mcp login vercel`. Konfigurasi MCP berada pada komputer pengguna, bukan berisi token di repositori ini.
