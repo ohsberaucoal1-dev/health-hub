@@ -10,3 +10,5 @@ data/
 *.sqlite-shm
 *.sqlite-wal
 tmp-tests/
+.vercel/
+dist/

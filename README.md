@@ -1,6 +1,6 @@
 # Health Hub — Dashboard analisis berbasis riset
 
-Website dan backend berbahasa Indonesia berdasarkan dua dokumen Markdown dalam folder ini. Node.js 24+ dengan SQLite bawaan; tidak membutuhkan instalasi dependency npm.
+Website dan backend berbahasa Indonesia berdasarkan dua dokumen Markdown dalam folder ini. Node.js 24.x, SQLite untuk lokal, dan PostgreSQL untuk Vercel. Jalankan `npm.cmd ci` setelah clone untuk memasang dependency.
 
 ## Menjalankan
 
@@ -41,4 +41,4 @@ Data kiriman API disimpan di SQLite server berdasarkan profil pemilik key. API k
 
 ## Hosting
 
-Repositori GitHub menyimpan source code; GitHub Pages tidak menjalankan backend Node.js. Deployment memerlukan runtime Node.js 24+, disk persisten untuk SQLite, environment API key, dan HTTPS. Saat ini backend disiapkan untuk dijalankan lokal atau pada satu instance server; belum ada deployment online atau perubahan kode aplikasi Android.
+Repositori GitHub menyimpan source code; GitHub Pages tidak menjalankan backend Node.js. Konfigurasi Vercel tersedia dengan PostgreSQL persisten melalui `DATABASE_URL` dan API key melalui environment. Lihat [panduan Vercel](docs/vercel.md). Server lokal tetap dapat menggunakan SQLite. Source aplikasi Android belum disertakan; aplikasi pengirim harus mengikuti [kontrak API](docs/api.md).

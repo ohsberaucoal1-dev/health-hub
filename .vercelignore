@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+data
+*.sqlite*
+tmp-browser
+tmp-tests
+preview*.png
+node_modules
+tests

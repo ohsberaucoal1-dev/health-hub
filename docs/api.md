@@ -1,6 +1,6 @@
 # Integrasi aplikasi Health Hub
 
-Backend Node.js menerima HTTP JSON dan menyimpan agregat harian ke SQLite. Dashboard disajikan dari server yang sama. Kontrak ini perlu diimplementasikan di aplikasi pengirim; source code aplikasi Android Health Hub belum tersedia di proyek ini.
+Backend Node.js menerima HTTP JSON dan menyimpan agregat harian ke SQLite lokal atau PostgreSQL ketika `DATABASE_URL` diatur. Dashboard disajikan dari origin yang sama. Kontrak ini perlu diimplementasikan di aplikasi pengirim; source code aplikasi Android Health Hub belum tersedia di proyek ini.
 
 ## Menjalankan lokal
 
@@ -86,10 +86,10 @@ Di Android gunakan HTTP client pilihan aplikasi, URL server yang dapat dijangkau
 
 `HEALTH_HUB_CLIENTS` adalah JSON array `[{"id":"personal","api_key":"KEY_ACAK_MINIMAL_32_KARAKTER"}]`. Buat key acak memakai `crypto.randomBytes(32).toString('base64url')`; placeholder dokumentasi bukan key siap pakai. ID/key wajib unik. Untuk mengganti key, ubah konfigurasi dengan **id profil yang sama** dan restart server; data profil tetap ada dan key lama berhenti berlaku. Tambahkan id/key berbeda untuk pemilik data lain.
 
-Server memerlukan **runtime Node.js 24+ dan disk persisten**. GitHub Pages/hosting statis tidak menjalankan API. Jalankan satu instance aplikasi dengan `DATABASE_PATH` pada volume persisten; konfigurasi produksi melalui secret manager/environment, `HOST=0.0.0.0` jika diperlukan platform, serta reverse proxy HTTPS. Atur batas request/rate limit di reverse proxy untuk akses internet. CORS lintas-origin tidak dibuka: dashboard dan API berasal dari origin yang sama; aplikasi native tidak memerlukan CORS.
+Server lokal memerlukan **runtime Node.js 24.x dan disk persisten**. GitHub Pages/hosting statis tidak menjalankan API. Untuk SQLite, jalankan satu instance aplikasi dengan `DATABASE_PATH` pada volume persisten. Untuk Vercel, gunakan Functions dan PostgreSQL eksternal melalui `DATABASE_URL`, sesuai [panduan deployment](vercel.md). Konfigurasi produksi disimpan melalui secret manager/environment. Atur batas request/rate limit pada gateway hosting untuk akses internet. CORS lintas-origin tidak dibuka: dashboard dan API berasal dari origin yang sama; aplikasi native tidak memerlukan CORS.
 
 SQLite menyimpan data di `data/health-hub.sqlite` secara default, termasuk file WAL ketika aktif. File ini **tidak dienkripsi oleh aplikasi**. Batasi izin filesystem, gunakan enkripsi disk sesuai lingkungan, dan buat backup konsisten melalui SQLite backup API atau saat server berhenti. Jangan menyalin file database aktif saja tanpa WAL. API tidak menyediakan penghapusan data server; penghapusan/pengarsipan dilakukan oleh pengelola dengan backup dan prosedur terpisah. Tombol Hapus data lokal hanya menghapus browser.
 
 Backend ini belum di-deploy ke internet. Menjalankan server lokal dan menambahkan pengiriman HTTP pada aplikasi masih diperlukan untuk koneksi nyata.
 
-Implementasi memakai [SQLite bawaan Node.js](https://nodejs.org/api/sqlite.html); tidak membutuhkan dependency npm tambahan.
+Implementasi lokal memakai [SQLite bawaan Node.js](https://nodejs.org/api/sqlite.html); implementasi PostgreSQL menggunakan dependency `pg`. Jalankan `npm.cmd ci` setelah clone.
