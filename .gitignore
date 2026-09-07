@@ -1,0 +1,7 @@
+node_modules/
+tmp-browser/
+preview-mobile.png
+*.log
+.env
+.env.*
+!.env.example
