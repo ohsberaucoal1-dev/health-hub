@@ -6,6 +6,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "check:deployment": "node scripts/check-deployment.cjs",
     "build": "node scripts/build.cjs",
     "setup": "node scripts/setup.cjs",
     "start": "node server.js",

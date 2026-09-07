@@ -32,7 +32,9 @@ vercel.cmd link
 vercel.cmd deploy --prod
 ```
 
-`vercel.json` memakai preset Other, Node.js 24.x, `dist` untuk lima aset publik, serta direktori `api` untuk Functions. Build tidak menyalin `.env`, database, cache browser, source backend, atau pengujian ke direktori publik. `.vercelignore` juga mengecualikan data lokal dari upload source.
+`vercel.json` memakai preset Other, Node.js 24.x, `dist` untuk lima aset publik, serta direktori `api` untuk Functions di Singapura (`sin1`), sesuai region Neon. Build menjalankan pengujian lokal, lalu `check:deployment` memvalidasi konfigurasi key dan melakukan pengujian transaksi PostgreSQL langsung di lingkungan Vercel. Profil uji acak dihapus setelah pengujian. Kredensial database tidak diunduh ke komputer lokal.
+
+Build tidak menyalin `.env`, database, cache browser, source backend, atau pengujian ke direktori publik. `.vercelignore` juga mengecualikan data lokal dari upload source.
 
 Tabel `hh_profiles` dan `hh_daily_records` dibuat otomatis pada koneksi pertama dengan kunci migrasi transaksi. Upsert menggunakan penguncian per profil di PostgreSQL agar kiriman paralel dari beberapa instance tidak membuat duplikat atau melewati batas riwayat. API mematuhi kontrak yang sama seperti backend lokal. Batas payload aplikasi tetap 2 MB dan batas fungsi 30 detik.
 

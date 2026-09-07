@@ -7,3 +7,4 @@ tmp-browser
 tmp-tests
 preview*.png
 node_modules
+dist
