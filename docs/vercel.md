@@ -1,5 +1,17 @@
 # Deploy Health Hub ke Vercel
 
+## MCP dan deployment otomatis
+
+MCP resmi Vercel dikonfigurasi dengan `codex mcp add vercel --url https://mcp.vercel.com`, kemudian OAuth akun Vercel. Status konfigurasi dapat diperiksa dengan `codex mcp get vercel`; koneksi OAuth dapat diulang dengan `codex mcp login vercel`. Konfigurasi MCP berada pada komputer pengguna, bukan berisi token di repositori ini.
+
+Deployment berulang memakai integrasi GitHub–Vercel. Setelah proyek Vercel terhubung dengan `ohsberaucoal1-dev/health-hub`, push/merge ke production branch `main` memicu deployment **frontend dan Functions backend dalam proyek yang sama**. Cabang lain mendapatkan preview mengikuti pengaturan Vercel. Hubungkan repositori dari pengaturan Git proyek atau `vercel git connect https://github.com/ohsberaucoal1-dev/health-hub.git` setelah `vercel link`.
+
+Build menjalankan pengujian sebelum menghasilkan aset. Pengujian lokal/build tidak mewarisi `DATABASE_URL` dan API key produksi; pengujian database sungguhan hanya berjalan bila `TEST_DATABASE_URL` diberikan secara eksplisit. Data asli tidak disimpan di Git atau artefak statis.
+
+Penambahan MCP saja belum mengaktifkan deployment otomatis: otorisasi OAuth, koneksi proyek Git, dan environment database harus selesai. MCP digunakan untuk mengelola dan memeriksa deployment; integrasi Git tetap dapat memicu deployment ketika Codex ditutup.
+
+Referensi: [MCP Vercel](https://vercel.com/docs/agent-resources/vercel-mcp), [deployment otomatis dari GitHub](https://vercel.com/docs/git/vercel-for-github).
+
 Deployment memuat frontend dan tiga Vercel Functions (`/api/health`, `/api/v1/records`, `/api/v1/status`). Data produksi disimpan di PostgreSQL eksternal, bukan file SQLite serverless.
 
 ## Environment wajib

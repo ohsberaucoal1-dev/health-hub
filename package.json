@@ -9,7 +9,7 @@
     "build": "node scripts/build.cjs",
     "setup": "node scripts/setup.cjs",
     "start": "node server.js",
-    "check": "node --check app.js && node --check server.js && node --test tests/*.test.cjs"
+    "check": "node scripts/check.cjs"
   },
   "dependencies": {
     "pg": "^8.23.0"
