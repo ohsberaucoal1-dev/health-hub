@@ -5,3 +5,8 @@ preview-mobile.png
 .env
 .env.*
 !.env.example
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+tmp-tests/

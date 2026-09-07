@@ -48,6 +48,7 @@
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id);
   let data = makeDemo(), mode = 'demo', days = 7;
+  let apiKey = '', apiTimer = null, apiGeneration = 0, apiBusy = false, serverSync = null, apiState = '';
   let storageWarning = '';
   try { const saved = localStorage.getItem(KEY); if (saved) { data = validate(JSON.parse(saved)); mode = 'import'; } } catch (_) { storageWarning = 'Penyimpanan lokal tidak tersedia atau data lama tidak valid. Mode demo ditampilkan.'; }
   let selected = data.records.at(-1).date;
@@ -99,8 +100,8 @@
     const row = data.records.find(r => r.date === selected) || { date: selected };
     const scale = data.fatigue_scale;
     $('date').value = selected;
-    $('mode-label').textContent = mode === 'demo' ? 'Mode demo' : mode === 'empty' ? 'Belum ada data' : 'Data impor';
-    $('mode-copy').textContent = mode === 'demo' ? 'Data ilustrasi, bukan kondisi kesehatan Anda. Belum terhubung ke Health Hub.' : mode === 'empty' ? 'Impor berkas dari Health Hub untuk memulai.' : 'Berkas Health Hub berhasil diimpor. Pembaruan berikutnya memerlukan impor ulang.';
+    $('mode-label').textContent = mode === 'server' ? 'Data server' : mode === 'demo' ? 'Mode demo' : mode === 'empty' ? 'Belum ada data' : 'Data impor lokal';
+    $('mode-copy').textContent = mode === 'server' ? apiState : mode === 'demo' ? 'Data ilustrasi, bukan kondisi kesehatan Anda. Hubungkan API untuk data asli.' : mode === 'empty' ? 'Hubungkan API atau impor berkas dari Health Hub untuk memulai.' : 'Berkas tersimpan lokal. Hubungkan API untuk menampilkan data yang diterima server.';
     $('fatigue-value').textContent = isNumber(row.fatigue) ? fmt(row.fatigue) : '—';
     $('fatigue-max').textContent = scale && scale.min === 0 ? '/ ' + fmt(scale.max) : '';
     $('score-badge').textContent = mode === 'demo' ? 'DATA ILUSTRASI' : 'DARI SUMBER';
@@ -118,7 +119,7 @@
     $('history').innerHTML = records.length ? [...records].reverse().map(r => `<tr><td>${dateLabel(r.date)}</td><td>${isNumber(r.fatigue) ? fmt(r.fatigue) : '—'}</td><td>${duration(r.sleep_minutes)}</td><td>${isNumber(r.steps) ? fmt(r.steps) : '—'}</td><td>${isNumber(r.resting_hr) ? fmt(r.resting_hr) + ' bpm' : '—'}</td></tr>`).join('') : '<tr><td colspan="5">Tidak ada data pada periode ini. Pilih tanggal lain atau impor data.</td></tr>';
     const avgFatigue = average(records, 'fatigue'); const paired = records.filter(r => isNumber(r.fatigue) && isNumber(r.sleep_minutes)).length;
     $('trend-summary').textContent = `${dateLabel(shiftDate(selected, 1 - days))} – ${dateLabel(selected)}: ${records.length}/${days} hari tersedia. Rerata fatigue ${avgFatigue === null ? 'belum tersedia' : fmt(avgFatigue) + ' poin pada skala sumber'}, rerata tidur ${duration(average(records, 'sleep_minutes'))}. Terdapat ${paired} hari dengan kedua metrik. Ringkasan ini tidak menguji korelasi atau sebab-akibat. Ubah periode dan tanggal di Ringkasan.`;
-    $('connection-status').textContent = mode === 'demo' ? 'Status: mode demo · Tidak ada sinkronisasi langsung.' : mode === 'empty' ? 'Status: menunggu impor data Health Hub.' : `Status: ${data.records.length} catatan diimpor · Catatan terakhir ${dateLabel(data.records.at(-1).date)}. Tidak ada sinkronisasi langsung.`;
+    $('connection-status').textContent = mode === 'server' ? apiState : mode === 'demo' ? 'Status: mode demo · Hubungkan API untuk data asli.' : mode === 'empty' ? 'Status: menunggu data Health Hub.' : `Status: ${data.records.length} catatan diimpor lokal · Catatan terakhir ${dateLabel(data.records.at(-1).date)}.`;
     $('export').disabled = !data.records.length;
   }
   function navigate() {
@@ -139,7 +140,7 @@
     try {
       if (file.size > 2 * 1024 * 1024) throw Error('Berkas melebihi 2 MB. Kurangi periode ekspor.');
       const raw = JSON.parse(await file.text()); const next = validate(raw);
-      data = next; mode = raw.export_mode === 'demo' || next.fatigue_scale?.name === 'Indeks ilustrasi (demo)' ? 'demo' : 'import'; selected = data.records.at(-1).date;
+      stopApi(); data = next; mode = raw.export_mode === 'demo' || next.fatigue_scale?.name === 'Indeks ilustrasi (demo)' ? 'demo' : 'import'; selected = data.records.at(-1).date;
       let persisted = true;
       try { if (mode === 'demo') localStorage.removeItem(KEY); else localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) { persisted = false; }
       render(); message.textContent = `${data.records.length} catatan berhasil dimuat${mode === 'demo' ? ' sebagai demo' : ''}. ${persisted ? 'Buka Ringkasan untuk melihat analisis.' : 'Penyimpanan gagal; data hanya tersedia selama halaman ini terbuka.'}`;
@@ -148,8 +149,49 @@
   });
   $('clear-data').addEventListener('click', () => {
     try { localStorage.removeItem(KEY); } catch (_) { $('import-message').textContent = 'Browser menolak penghapusan penyimpanan. Hapus data situs melalui pengaturan browser.'; $('import-message').classList.add('error'); return; }
-    data = { source: 'Health Hub', fatigue_scale: null, records: [] }; mode = 'empty'; render(); $('import-message').classList.remove('error'); $('import-message').textContent = 'Data lokal dihapus. Impor berkas baru untuk memulai.';
+    stopApi(); data = { source: 'Health Hub', fatigue_scale: null, records: [] }; mode = 'empty'; render(); $('import-message').classList.remove('error'); $('import-message').textContent = 'Data lokal dihapus dan koneksi diputus. Data pada server tidak dihapus.';
   });
-  $('demo').addEventListener('click', () => { data = makeDemo(); mode = 'demo'; selected = data.records.at(-1).date; render(); $('import-message').classList.remove('error'); $('import-message').textContent = 'Demo ditampilkan sementara. Data impor tersimpan tidak ditimpa.'; });
+  $('demo').addEventListener('click', () => { stopApi(); data = makeDemo(); mode = 'demo'; selected = data.records.at(-1).date; render(); $('import-message').classList.remove('error'); $('import-message').textContent = 'Demo ditampilkan sementara. Data impor tersimpan tidak ditimpa.'; });
+  function stopApi() {
+    apiGeneration++; apiKey = ''; apiBusy = false; clearInterval(apiTimer); apiTimer = null;
+    $('api-key').value = ''; $('refresh-api').disabled = true; $('disconnect-api').disabled = true;
+    $('api-message').textContent = 'API belum terhubung.'; $('api-message').classList.remove('error');
+  }
+  async function refreshApi() {
+    if (!apiKey || apiBusy) return;
+    const generation = apiGeneration; apiBusy = true;
+    $('refresh-api').disabled = true;
+    try {
+      const response = await fetch('/api/v1/records', { headers: { Authorization: `Bearer ${apiKey}` }, cache: 'no-store', signal: AbortSignal.timeout(12000) });
+      if (generation !== apiGeneration) return;
+      const raw = await response.json().catch(() => { throw Error('API tidak tersedia. Jalankan dashboard melalui server Node.js, bukan hosting statis.'); });
+      if (generation !== apiGeneration) return;
+      if (!response.ok) throw Error(raw.message || `API gagal (${response.status}).`);
+      if (!Array.isArray(raw.records) || raw.source !== 'Health Hub') throw Error('Respons API tidak sesuai format Health Hub.');
+      const next = raw.records.length ? validate(raw) : { source: 'Health Hub', fatigue_scale: raw.fatigue_scale, records: [] };
+      const followLatest = mode !== 'server' || !data.records.length || selected === data.records.at(-1)?.date;
+      data = next; mode = 'server'; serverSync = raw.sync;
+      if (followLatest && data.records.length) selected = data.records.at(-1).date;
+      apiState = data.records.length ? `${data.records.length} hari · Diterima server ${new Date(serverSync.received_at).toLocaleString('id-ID')} · Diperiksa ${new Date().toLocaleTimeString('id-ID')} · Periksa otomatis setiap 30 detik.` : 'Terhubung. Server belum menerima data untuk profil ini; menunggu kiriman Health Hub.';
+      $('api-message').classList.remove('error'); $('api-message').textContent = apiState;
+      $('disconnect-api').disabled = false; render();
+    } catch (error) {
+      if (generation !== apiGeneration) return;
+      apiState = `Pembaruan gagal: ${error.message} ${mode === 'server' ? 'Menampilkan salinan terakhir; data mungkin belum terbaru.' : ''}`;
+      $('api-message').textContent = apiState; $('api-message').classList.add('error'); render();
+    } finally { if (generation === apiGeneration) { apiBusy = false; $('refresh-api').disabled = !apiKey; } }
+  }
+  $('api-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const key = $('api-key').value.trim();
+    if (!/^[A-Za-z0-9_-]{32,256}$/.test(key)) { $('api-message').textContent = 'Masukkan API key lengkap dari konfigurasi server.'; $('api-message').classList.add('error'); return; }
+    stopApi(); apiKey = key;
+    // Clear previous server profile immediately: never show one profile under another key.
+    data = { source: 'Health Hub', fatigue_scale: null, records: [] }; mode = 'server'; apiState = 'Menghubungkan ke server…'; render();
+    $('disconnect-api').disabled = false;
+    refreshApi(); apiTimer = setInterval(() => { if (!document.hidden) refreshApi(); }, 30000);
+  });
+  $('refresh-api').addEventListener('click', refreshApi);
+  $('disconnect-api').addEventListener('click', () => { stopApi(); data = { source: 'Health Hub', fatigue_scale: null, records: [] }; mode = 'empty'; render(); });
   window.addEventListener('hashchange', navigate); render(); navigate(); if (storageWarning) $('import-message').textContent = storageWarning;
 })();
